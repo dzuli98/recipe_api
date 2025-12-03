@@ -16,12 +16,6 @@ def get_all(db: Session) -> List[models.Recipe]:
     recipes = db.query(models.Recipe).all()
     return recipes
 
-def get_recipe(id: int, db: Session):
-    recipe = db.query(models.Recipe).filter(models.Recipe.id == id).first()
-    if not recipe:
-        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Recipe with {id} id not found!')
-    return recipe
-
 def update_recipe(id: int, request: schemas.Recipe, db: Session):
     recipe_query = db.query(models.Recipe).filter(models.Recipe.id == id)
     recipe_obj = recipe_query.first()
