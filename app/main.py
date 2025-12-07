@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from .database import engine
 from . import models
-from .routers import recipe
+from .routers import recipe, ingredient
 
 app = FastAPI()
 
@@ -14,5 +14,6 @@ def say_hello():
     return {"message": "This is working!"}
 
 app.include_router(recipe.router)
+app.include_router(ingredient.router)
 models.Base.metadata.create_all(engine)
  

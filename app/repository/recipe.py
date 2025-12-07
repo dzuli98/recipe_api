@@ -19,11 +19,12 @@ def create(request: schemas.RecipeCreate, db: Session) -> schemas.RecipeOut:
         
         # create or reuse ingredients by name
         for ing in request.ingredients:
-            found = db.query(models.Ingredient).filter(models.Ingredient.name == ing.name).all()
+            clean_name = ing.name.strip().lower()
+            found = db.query(models.Ingredient).filter(models.Ingredient.name == clean_name).first()
             if found:
                 ingredients_obj.append(found)
             else:
-                new_ing = models.Ingredient(name=ing.name)
+                new_ing = models.Ingredient(name=clean_name)
                 db.add(new_ing)
                 db.flush()
                 ingredients_obj.append(new_ing)
