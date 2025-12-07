@@ -24,3 +24,7 @@ def get_ingredient(id: int, db: Session = Depends(database.get_db)):
 @router.put('/{id}', status_code=status.HTTP_200_OK, response_model=schemas.IngredientOut)
 def update_ingredient(id: int, request: schemas.IngredientBase, db: Session = Depends(database.get_db)):
     return ingredient.update_ingredient(id, request, db)
+
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
+def delete_ingredient(id: int, db: Session = Depends(database.get_db)):
+    return ingredient.delete_ingredient(id, db)

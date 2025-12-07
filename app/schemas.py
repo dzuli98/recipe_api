@@ -1,6 +1,9 @@
 from pydantic import BaseModel
 from typing import List
 
+class Message(BaseModel):
+    detail: str
+    
 class BaseRecipe(BaseModel):
     title: str
     description: str

@@ -46,3 +46,22 @@ def update_ingredient(id: int, request: schemas.IngredientCreate, db: Session):
             detail="Ingredient with this name already exists."
         )
     return schemas.IngredientOut.model_validate(ing_obj)
+
+# query.delete() → direct SQL, fast, no ORM cascade/events
+# db.delete(obj) → ORM-managed, slower, triggers cascade and events
+def delete_ingredient(id: int, db: Session):
+    ing= db.query(models.Ingredient).filter(models.Ingredient.id == id).first()
+    if not ing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'Ingredient with id: {id} not found.'
+        )
+    try:
+        db.delete(ing)
+        db.commit()
+    except IndentationError: # could happen if there is no ondelete cascade in association table
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete this ingredient due to related constraints."
+        )
