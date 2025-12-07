@@ -41,7 +41,7 @@ def create(request: schemas.RecipeCreate, db: Session) -> schemas.RecipeOut:
         db.rollback()
         raise
     except Exception:
-        db.rollback()
+        db.rollback() # after commit rollback doesnt work
         raise
 
 '''def get_all(db: Session) -> List[models.Recipe]:
