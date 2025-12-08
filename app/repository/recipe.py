@@ -115,9 +115,16 @@ def update_recipe(id: int, request: schemas.RecipeCreate, db: Session):
     return schemas.RecipeOut.model_validate(recipe)
 
 def delete_recipe(id: int, db: Session):
-    recipe_to_delete = db.query(models.Recipe).filter(models.Recipe.id == id)
-    if not recipe_to_delete.first():
+    recipe_to_delete = db.query(models.Recipe).filter(models.Recipe.id == id).first()
+    if not recipe_to_delete:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Recipe with {id} not found.')
-    recipe_to_delete.delete(synchronize_session=False)
-    db.commit()
+    try:
+        db.delete(recipe_to_delete)
+        db.commit()
+    except IndentationError: # could happen if there is no ondelete cascade in association table
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete this ingredient due to related constraints."
+        )
     return {"detail": f"Recipe with id {id} deleted successfully."}

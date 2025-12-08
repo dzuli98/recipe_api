@@ -25,6 +25,6 @@ def get_recipe(id, db: Session = Depends(database.get_db)):
 def update_recipe(id, request: schemas.RecipeUpdate, db: Session = Depends(database.get_db)):
     return recipe.update_recipe(id, request, db)
 
-''' @router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_recipe(id, db: Session = Depends(database.get_db)):
-    return recipe.delete_recipe(id, db)'''
+    return recipe.delete_recipe(id, db)
