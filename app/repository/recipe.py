@@ -44,24 +44,75 @@ def create(request: schemas.RecipeCreate, db: Session) -> schemas.RecipeOut:
         db.rollback() # after commit rollback doesnt work
         raise
 
-'''def get_all(db: Session) -> List[models.Recipe]:
+def get_all(db: Session) -> List[models.Recipe]:
     recipes = db.query(models.Recipe).all()
-    return recipes
+    return [schemas.RecipeOut.model_validate(recipe) for recipe in recipes]
 
-def update_recipe(id: int, request: schemas.Recipe, db: Session):
+def get_recipe(id: int, db: Session):
+    recipe = db.query(models.Recipe).filter(models.Recipe.id == id).first()
+    if not recipe:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f'Recipe with id: {id} not found! ')
+    return schemas.RecipeOut.model_validate(recipe)
+
+def update_recipe(id: int, request: schemas.RecipeCreate, db: Session):
     recipe_query = db.query(models.Recipe).filter(models.Recipe.id == id)
-    recipe_obj = recipe_query.first()
-    if not recipe_obj:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Recipe with {id} id not found')
-    recipe_query.update(request.model_dump())
-    db.commit()
-    db.refresh(recipe_obj) # updating the memory object
-    # without this recipe_obj would not contain the updated values
-    # in /docs the correct data will be returned
-    # When Pydantic tries to access the attributes of recipe_obj (like title, description, etc.), SQLAlchemy detects that 
-    # these attributes are expired.
-    # SQLAlchemy then automatically reloads the data for those attributes from the database,
-    return recipe_obj
+    recipe = recipe_query.first()
+    if not recipe:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                            detail=f'Recipe with {id} id not found')
+    # recipe_query.update(request.model_dump()) bypasses orm
+    if request.title is not None:
+        recipe.title = request.title.strip()
+
+    if request.description is not None:
+        recipe.description = request.description.strip()
+
+    if request.cooking_time is not None:
+        recipe.cooking_time = request.cooking_time
+    # Process ingredients (if provided)
+    ingredients_to_attach = []
+
+    if request.ingredient_ids:
+        existing = (
+            db.query(models.Ingredient)
+            .filter(models.Ingredient.id.in_(request.ingredient_ids))
+            .all()
+        )
+        if len(existing) != len(set(request.ingredient_ids)):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="One or more ingredient IDs not found."
+            )
+        ingredients_to_attach.extend(existing)
+
+    for ing in request.ingredients or []:
+        found = (
+            db.query(models.Ingredient)
+            .filter(models.Ingredient.name == ing.name.lower().strip())
+            .first()
+        )
+        if found:
+            ingredients_to_attach.append(found)
+        else:
+            new_ing = models.Ingredient(name=ing.name.lower().strip())
+            db.add(new_ing)
+            db.flush()  # ensures new_ing.id exists
+            ingredients_to_attach.append(new_ing)
+    
+    if request.ingredient_ids or request.ingredients:
+        recipe.ingredients = ingredients_to_attach
+    
+    try:
+        db.commit()
+        db.refresh(recipe)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Integrity error (maybe title or ingredient name already exists)."
+        )
+    return schemas.RecipeOut.model_validate(recipe)
 
 def delete_recipe(id: int, db: Session):
     recipe_to_delete = db.query(models.Recipe).filter(models.Recipe.id == id)
@@ -70,4 +121,3 @@ def delete_recipe(id: int, db: Session):
     recipe_to_delete.delete(synchronize_session=False)
     db.commit()
     return {"detail": f"Recipe with id {id} deleted successfully."}
-'''

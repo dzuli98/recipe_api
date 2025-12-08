@@ -1,32 +1,39 @@
-from pydantic import BaseModel
-from typing import List
+from pydantic import BaseModel, Field
+from typing import List, Optional
 
 class Message(BaseModel):
     detail: str
-    
+
 class BaseRecipe(BaseModel):
-    title: str
-    description: str
-    cooking_time: int
+    title: str = Field(..., example="Delicious Pizza")  # Use example for better documentation
+    description: str = Field(..., example="A cheesy pizza with fresh ingredients")
+    cooking_time: int = Field(..., example=30)  # Example cooking time in minutes
 
 class IngredientBase(BaseModel):
-    name: str
+    name: str = Field(..., example="Tomato")  # Example ingredient name
 
 class IngredientCreate(IngredientBase):
-    # id will be automatically created by sqlalchemy
-    pass
+    pass  # No changes needed here
 
 class IngredientOut(IngredientBase):
     id: int
-    model_config = {'from_attributes': True} # if just tells pydantic how to read data
+    model_config = {'from_attributes': True}  # Tells Pydantic how to read data
 
+# with mutable obj like list, if i would define it here, all instances would share the same list
 class RecipeCreate(BaseRecipe):
-    ingredient_ids: List[int] = []
-    ingredients: List[IngredientCreate] = []
+    ingredient_ids: List[int] = Field(default_factory=list, example=[1, 2])  # Example IDs
+    ingredients: List[IngredientCreate] = Field(default_factory=list, example=[{"name": "Cheese"}, {"name": "Tomato"}])  # Example nested ingredients
 
 class RecipeOut(BaseRecipe):
     id: int
-    ingredients: List[IngredientOut] = []
+    ingredients: List[IngredientOut] = Field(default_factory=list)
     model_config = {
         "from_attributes": True
     }
+
+class RecipeUpdate(BaseModel):
+    title: Optional[str] = Field(None, example="Updated Pizza Title")
+    description: Optional[str] = Field(None, example="Updated description of the pizza")
+    cooking_time: Optional[int] = Field(None, example=25)  # Example updated cooking time
+    ingredient_ids: Optional[List[int]] = Field(None, example=[1, 2])  # Example ingredient IDs
+    ingredients: Optional[List[IngredientCreate]] = Field(None, example=[{"name": "Olive Oil"}])  # Example nested ingredients

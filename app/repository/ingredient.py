@@ -17,7 +17,7 @@ def create(request: schemas.IngredientCreate, db: Session = Depends(database.get
         db.refresh(new_ing)
         return schemas.IngredientOut.model_validate(new_ing)
     except IntegrityError: # it may happen if another user meanwhile inserted the same ingredient
-        db.rollback()
+        db.rollback() 
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ingredient already exists")
 
 def get_all(db: Session ) -> List[schemas.IngredientOut]:
