@@ -1,30 +1,38 @@
-from typing import List
 from fastapi import APIRouter, Depends, status
+from typing import List
 from sqlalchemy.orm import Session
-from ..repository import recipe
-from .. import database, schemas, models
 
-router = APIRouter(
-    prefix='/recipe',
-    tags=['Recipes']
-)
+from .. import schemas, database
+from ..repository import recipe as recipe_repo
 
-@router.post('/', status_code=status.HTTP_201_CREATED, response_model=schemas.RecipeOut)
+router = APIRouter(prefix="/recipe", tags=["Recipes"])
+
+
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.RecipeOut)
 def create(request: schemas.RecipeCreate, db: Session = Depends(database.get_db)):
-    return recipe.create(request, db)
+    recipe = recipe_repo.create(request, db)
+    return schemas.RecipeOut.model_validate(recipe)
 
-@router.get('/', status_code=status.HTTP_200_OK, response_model=List[schemas.RecipeOut])
-def all(db: Session = Depends(database.get_db)):
-    return recipe.get_all(db)
 
-@router.get('/{id}', status_code=status.HTTP_200_OK, response_model=schemas.RecipeOut)
-def get_recipe(id, db: Session = Depends(database.get_db)):
-    return recipe.get_recipe(id, db)
+@router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.RecipeOut])
+def get_all(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db)):
+    recipes = recipe_repo.get_all(db, skip=skip, limit=limit)
+    return [schemas.RecipeOut.model_validate(recipe) for recipe in recipes]
 
-@router.put('/{id}', status_code=status.HTTP_202_ACCEPTED, response_model=schemas.RecipeOut)
-def update_recipe(id, request: schemas.RecipeUpdate, db: Session = Depends(database.get_db)):
-    return recipe.update_recipe(id, request, db)
 
-@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
-def delete_recipe(id, db: Session = Depends(database.get_db)):
-    return recipe.delete_recipe(id, db)
+@router.get("/{id}", status_code=status.HTTP_200_OK, response_model=schemas.RecipeOut)
+def get_recipe(id: int, db: Session = Depends(database.get_db)):
+    recipe = recipe_repo.get_recipe(id, db)
+    return schemas.RecipeOut.model_validate(recipe)
+
+
+@router.put("/{id}", status_code=status.HTTP_200_OK, response_model=schemas.RecipeOut)
+def update(id: int, request: schemas.RecipeCreate, db: Session = Depends(database.get_db)):
+    recipe = recipe_repo.update_recipe(id, request, db)
+    return schemas.RecipeOut.model_validate(recipe)
+
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete(id: int, db: Session = Depends(database.get_db)):
+    recipe_repo.delete_recipe(id, db)
+    return None

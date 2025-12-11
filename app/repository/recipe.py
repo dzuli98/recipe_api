@@ -1,8 +1,11 @@
-from fastapi import HTTPException, status
 from typing import List
-from sqlalchemy.orm import Session
+
+from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
-from .. import schemas, models
+from sqlalchemy.orm import Session
+
+from .. import models, schemas
+
 
 def create(request: schemas.RecipeCreate, db: Session) -> schemas.RecipeOut:
     try:
@@ -33,7 +36,7 @@ def create(request: schemas.RecipeCreate, db: Session) -> schemas.RecipeOut:
         db.add(new_recipe)
         db.commit() # good practice is to have one commit
         db.refresh(new_recipe)
-        return schemas.RecipeOut.model_validate(new_recipe)
+        return new_recipe
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Integrity error")
@@ -46,14 +49,14 @@ def create(request: schemas.RecipeCreate, db: Session) -> schemas.RecipeOut:
 
 def get_all(db: Session) -> List[models.Recipe]:
     recipes = db.query(models.Recipe).all()
-    return [schemas.RecipeOut.model_validate(recipe) for recipe in recipes]
+    return [recipe for recipe in recipes]
 
 def get_recipe(id: int, db: Session):
     recipe = db.query(models.Recipe).filter(models.Recipe.id == id).first()
     if not recipe:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f'Recipe with id: {id} not found! ')
-    return schemas.RecipeOut.model_validate(recipe)
+    return recipe
 
 def update_recipe(id: int, request: schemas.RecipeCreate, db: Session):
     recipe_query = db.query(models.Recipe).filter(models.Recipe.id == id)
@@ -112,7 +115,7 @@ def update_recipe(id: int, request: schemas.RecipeCreate, db: Session):
             status_code=status.HTTP_409_CONFLICT,
             detail="Integrity error (maybe title or ingredient name already exists)."
         )
-    return schemas.RecipeOut.model_validate(recipe)
+    return recipe
 
 def delete_recipe(id: int, db: Session):
     recipe_to_delete = db.query(models.Recipe).filter(models.Recipe.id == id).first()
@@ -121,7 +124,7 @@ def delete_recipe(id: int, db: Session):
     try:
         db.delete(recipe_to_delete)
         db.commit()
-    except IndentationError: # could happen if there is no ondelete cascade in association table
+    except IntegrityError: # could happen if there is no ondelete cascade in association table
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

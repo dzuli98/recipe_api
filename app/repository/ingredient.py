@@ -1,30 +1,32 @@
-from fastapi import status, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-from .. import schemas, database, models
 from typing import List
 
+from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
-def create(request: schemas.IngredientCreate, db: Session = Depends(database.get_db)):
+from .. import models, schemas
+
+
+def create(request: schemas.IngredientCreate, db: Session):
     try:
         clean_name = request.name.strip().lower()
         existing = db.query(models.Ingredient).filter(models.Ingredient.name == clean_name).first()
         if existing:
-            return schemas.IngredientOut.model_validate(existing)
+            return existing
         new_ing = models.Ingredient(name=clean_name)
         db.add(new_ing)
         db.commit()
         db.refresh(new_ing)
-        return schemas.IngredientOut.model_validate(new_ing)
+        return new_ing
     except IntegrityError: # it may happen if another user meanwhile inserted the same ingredient
         db.rollback() 
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ingredient already exists")
 
 def get_all(db: Session ) -> List[schemas.IngredientOut]:
-    return [schemas.IngredientOut.model_validate(ing) for ing in db.query(models.Ingredient).all()]
+    return [ing for ing in db.query(models.Ingredient).all()]
 
 def get_ingredient(id: int, db: Session):
-    return schemas.IngredientOut.model_validate(db.query(models.Ingredient).filter(models.Ingredient.id == id).first())
+    return db.query(models.Ingredient).filter(models.Ingredient.id == id).first()
 
 def update_ingredient(id: int, request: schemas.IngredientCreate, db: Session):
     ing_query = db.query(models.Ingredient).filter(models.Ingredient.id == id)
@@ -45,7 +47,7 @@ def update_ingredient(id: int, request: schemas.IngredientCreate, db: Session):
             status_code=status.HTTP_409_CONFLICT,
             detail="Ingredient with this name already exists."
         )
-    return schemas.IngredientOut.model_validate(ing_obj)
+    return ing_obj
 
 # query.delete() → direct SQL, fast, no ORM cascade/events
 # db.delete(obj) → ORM-managed, slower, triggers cascade and events
@@ -59,7 +61,7 @@ def delete_ingredient(id: int, db: Session):
     try:
         db.delete(ing)
         db.commit()
-    except IndentationError: # could happen if there is no ondelete cascade in association table
+    except IntegrityError: # could happen if there is no ondelete cascade in association table
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

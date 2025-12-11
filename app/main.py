@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from .database import engine
 from . import models
-from .routers import recipe, ingredient
+from .routers import recipe, ingredient, user, recipe_detail
 
 app = FastAPI()
 
@@ -15,5 +15,7 @@ def say_hello():
 
 app.include_router(recipe.router)
 app.include_router(ingredient.router)
+app.include_router(user.router)
+app.include_router(recipe_detail.router)
 models.Base.metadata.create_all(engine)
  

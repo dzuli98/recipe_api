@@ -19,6 +19,8 @@ class IngredientOut(IngredientBase):
     id: int
     model_config = {'from_attributes': True}  # Tells Pydantic how to read data
 
+class IngredientUpdate(IngredientBase):
+    pass
 # with mutable obj like list, if i would define it here, all instances would share the same list
 class RecipeCreate(BaseRecipe):
     ingredient_ids: List[int] = Field(default_factory=list, example=[1, 2])  # Example IDs
@@ -37,3 +39,33 @@ class RecipeUpdate(BaseModel):
     cooking_time: Optional[int] = Field(None, example=25)  # Example updated cooking time
     ingredient_ids: Optional[List[int]] = Field(None, example=[1, 2])  # Example ingredient IDs
     ingredients: Optional[List[IngredientCreate]] = Field(None, example=[{"name": "Olive Oil"}])  # Example nested ingredients
+
+class BaseUser(BaseModel):
+    username: str = Field(..., example="username")
+
+class UserCreate(BaseUser):
+    pass
+
+class UserOut(BaseUser):
+    id: int
+    model_config = {
+        "from_attributes": True
+    }  
+
+class UserUpdate(BaseUser):
+    username: Optional[str] = Field(None, example="username")
+
+class BaseRecipeDetail(BaseModel):
+    calories: int = Field(..., ge=0)
+
+class RecipeDetailCreate(BaseRecipeDetail):
+    recipe_id: int
+
+class RecipeDetailOut(BaseRecipeDetail):
+    id: int
+    model_config = {
+        "from_attributes": True
+    }
+
+class RecipeDetailUpdate(BaseRecipeDetail):
+    pass
