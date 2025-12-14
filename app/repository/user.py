@@ -3,7 +3,7 @@ from typing import List
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-
+from .. hashing import Hash
 from .. import models, schemas
 
 
@@ -13,7 +13,7 @@ def create(request: schemas.UserCreate, db: Session):
         user_obj = db.query(models.User).filter(models.User.username == username).first()
         if user_obj:
             return user_obj
-        new_user = models.User(username=username)
+        new_user = models.User(username=username, password=Hash.bcrypt(request.password))
         db.add(new_user)
         db.commit()
         db.refresh(new_user)

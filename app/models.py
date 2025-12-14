@@ -28,7 +28,7 @@ class Recipe(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     ingredients = relationship('Ingredient', secondary=recipe_ingredient, back_populates='recipes')
     # one to many
-    owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     owner = relationship("User", back_populates="recipes")
     # one to one
     details = relationship("RecipeDetails", back_populates="recipe", uselist=False)
@@ -44,6 +44,7 @@ class User(Base):
     __tablename__= 'users'
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, nullable=False)
+    password = Column(String, nullable=False)
 
     recipes = relationship("Recipe", back_populates="owner", cascade="all, delete-orphan") # cascade goes to parent relationship, parent controls deletions behaviour
 

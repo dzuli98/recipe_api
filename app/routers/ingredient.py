@@ -2,14 +2,16 @@ from typing import List
 from fastapi import APIRouter, status, Depends
 from sqlalchemy.orm import Session
 
-from .. import schemas, database
+from .. import schemas, database, oauth2
 from ..repository import ingredient as ingredient_repo
 
-router = APIRouter(prefix="/ingredients", tags=["Ingredients"])
+router = APIRouter(prefix="/ingredients",
+                   tags=["Ingredients"])
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.IngredientOut)
-def create(request: schemas.IngredientCreate, db: Session = Depends(database.get_db)):
+def create(request: schemas.IngredientCreate, db: Session = Depends(database.get_db),
+           current_user = Depends(oauth2.get_current_user)):# before i run create i must resolve get_current_user
     ingredient = ingredient_repo.create(request, db)
     return schemas.IngredientOut.model_validate(ingredient)
 

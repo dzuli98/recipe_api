@@ -44,7 +44,7 @@ class BaseUser(BaseModel):
     username: str = Field(..., example="username")
 
 class UserCreate(BaseUser):
-    pass
+    password : str = Field(...,min_length=6, example='strongpassword')
 
 class UserOut(BaseUser):
     id: int
@@ -69,3 +69,15 @@ class RecipeDetailOut(BaseRecipeDetail):
 
 class RecipeDetailUpdate(BaseRecipeDetail):
     pass
+
+class Login(BaseModel):
+    username: str
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    username: str | None = None
