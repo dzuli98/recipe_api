@@ -1,8 +1,12 @@
-from datetime import datetime, timedelta, timezone
-from . import schemas, models
-from jose import jwt, JWTError
 import os
+from datetime import datetime, timedelta, timezone
+
 from dotenv import load_dotenv
+from jose import JWTError, jwt
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+
+from . import models, schemas
 
 load_dotenv()
 
@@ -20,7 +24,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def verify_token(token: str, credentials_exception, db):
+def verify_token(token: str, credentials_exception: HTTPException, db: Session):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str | None = payload.get("sub")

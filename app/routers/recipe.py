@@ -2,15 +2,15 @@ from fastapi import APIRouter, Depends, status
 from typing import List
 from sqlalchemy.orm import Session
 
-from .. import schemas, database
+from .. import schemas, database, oauth2, models
 from ..repository import recipe as recipe_repo
 
 router = APIRouter(prefix="/recipe", tags=["Recipes"])
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.RecipeOut)
-def create(request: schemas.RecipeCreate, db: Session = Depends(database.get_db)):
-    recipe = recipe_repo.create(request, db)
+def create(request: schemas.RecipeCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(oauth2.get_current_user)):
+    recipe = recipe_repo.create(request, db, current_user)
     return schemas.RecipeOut.model_validate(recipe)
 
 

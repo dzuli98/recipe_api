@@ -7,11 +7,12 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 
 
-def create(request: schemas.RecipeCreate, db: Session) -> schemas.RecipeOut:
+def create(request: schemas.RecipeCreate, db: Session, current_user: models.User) -> models.Recipe:
     try:
         new_recipe = models.Recipe(title=request.title,
                                    description = request.description,
-                                   cooking_time = request.cooking_time)
+                                   cooking_time = request.cooking_time,
+                                   owner_id = current_user.id)
         ingredients_obj: List[models.Ingredient] = []
         # attach existing ingredients by id
         if request.ingredient_ids:
