@@ -16,7 +16,7 @@ def create(request: schemas.RecipeCreate, db: Session = Depends(database.get_db)
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=List[schemas.RecipeOut])
 def get_all(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db)):
-    recipes = recipe_repo.get_all(db, skip=skip, limit=limit)
+    recipes = recipe_repo.get_all(db)
     return [schemas.RecipeOut.model_validate(recipe) for recipe in recipes]
 
 

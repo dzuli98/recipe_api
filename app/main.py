@@ -17,6 +17,6 @@ app.include_router(authentication.router)
 app.include_router(recipe.router)
 app.include_router(ingredient.router)
 app.include_router(user.router)
-#app.include_router(recipe_detail.router)
+app.include_router(recipe_detail.router)
 models.Base.metadata.create_all(engine)
  

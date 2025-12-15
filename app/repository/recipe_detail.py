@@ -18,7 +18,7 @@ def create(request: schemas.RecipeDetailCreate, db: Session):
 
         if recipe_detail_obj:
             # Already exists → return existing details
-            return schemas.RecipeDetailOut.model_validate(recipe_detail_obj)
+            return recipe_detail_obj
 
         # Create new details
         recipe_detail_obj = models.RecipeDetails(
