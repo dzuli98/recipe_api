@@ -1,9 +1,17 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 from .database import engine
-from . import models
+from . import models, settings
 from .routers import recipe, ingredient, user, recipe_detail, authentication
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Validate settings
+    settings.settings
+    yield
+    # Shutdown: Add cleanup if needed
+
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/")
 def read_root():

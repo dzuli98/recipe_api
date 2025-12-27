@@ -36,3 +36,17 @@ def update(id: int, request: schemas.RecipeCreate, db: Session = Depends(databas
 def delete(id: int, db: Session = Depends(database.get_db)):
     recipe_repo.delete_recipe(id, db)
     return None
+
+
+@router.get("/{id}/nutrition", status_code=status.HTTP_200_OK, response_model=schemas.NutritionResponse)
+async def get_nutrition(id: int, db: Session = Depends(database.get_db)):
+    data = await recipe_repo.get_nutrition(id, db)
+    nutrition_items = [
+        schemas.NutritionItem(
+            ingredient=item["ingredient"],
+            nutrients=item["nutrients"],
+            error=item["error"]
+        )
+        for item in data["nutrition"]
+    ]
+    return schemas.NutritionResponse(recipe_id=data["recipe_id"], nutrition=nutrition_items)

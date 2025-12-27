@@ -81,3 +81,12 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: str | None = None
+
+class NutritionItem(BaseModel):
+    ingredient: str
+    nutrients: dict | None = None
+    error: str | None = None
+
+class NutritionResponse(BaseModel):
+    recipe_id: int
+    nutrition: List[NutritionItem]

@@ -1,11 +1,14 @@
 from typing import List
+import httpx
+import logging
 
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from .. import models, schemas
+from .. import models, schemas, settings
 
+logger = logging.getLogger(__name__)
 
 def create(request: schemas.RecipeCreate, db: Session, current_user: models.User) -> models.Recipe:
     try:
@@ -132,3 +135,50 @@ def delete_recipe(id: int, db: Session):
             detail="Cannot delete this ingredient due to related constraints."
         )
     return {"detail": f"Recipe with id {id} deleted successfully."}
+
+
+async def get_nutrition(id: int, db: Session) -> dict:
+    recipe = get_recipe(id, db)
+    if not recipe:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    
+    ingredients = [ing.name for ing in recipe.ingredients]
+    if not ingredients:
+        raise HTTPException(status_code=400, detail="Recipe has no ingredients")
+    
+    nutrition_data = []
+    
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        for ingredient_name in ingredients:
+            try:
+                response = await client.get(
+                    "https://api.edamam.com/api/nutrition-data",
+                    params={
+                        "app_id": settings.settings.edamam_app_id,
+                        "app_key": settings.settings.edamam_app_key,
+                        "ingr": ingredient_name
+                    }
+                )
+                response.raise_for_status()
+                data = response.json()
+                nutrition_data.append({
+                    "ingredient": ingredient_name,
+                    "nutrients": data,
+                    "error": None
+                })
+            except httpx.HTTPStatusError as e:
+                logger.error(f"API error for {ingredient_name}: {e.response.status_code}")
+                nutrition_data.append({
+                    "ingredient": ingredient_name,
+                    "nutrients": None,
+                    "error": f"API error: {e.response.status_code}"
+                })
+            except Exception as e:
+                logger.error(f"Unexpected error for {ingredient_name}: {str(e)}")
+                nutrition_data.append({
+                    "ingredient": ingredient_name,
+                    "nutrients": None,
+                    "error": "Unexpected error"
+                })
+    
+    return {"recipe_id": id, "nutrition": nutrition_data} 
