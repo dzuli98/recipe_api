@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from .database import engine
 from . import models, settings
-from .routers import recipe, ingredient, user, recipe_detail, authentication
+from .routers import recipe, ingredient, user, recipe_detail, authentication, cashing_router, ratelimit
 from .core.redis_client import redis_client
 
 
@@ -11,7 +11,7 @@ async def lifespan(app: FastAPI):
     await redis_client.check_redis_connection()
     yield  # Hand over control to the app
     # Shutdown: cleanup if needed
-    await redis_client.close()
+    await redis_client.client.close()
 
 app = FastAPI(lifespan=lifespan)
 
@@ -28,5 +28,7 @@ app.include_router(recipe.router)
 app.include_router(ingredient.router)
 app.include_router(user.router)
 app.include_router(recipe_detail.router)
+app.include_router(cashing_router.router)
+app.include_router(ratelimit.router)
 models.Base.metadata.create_all(engine)
  
