@@ -8,13 +8,13 @@ docker compose up -d
 
 # Redis
 
-## Rate Limiting in This API
+### Rate Limiting in This API
 
 To protect the API from abuse and ensure fair usage, this project implements **rate limiting**. Two strategies are discussed below.
 
 ---
 
-### 1️⃣ Fixed Window Rate Limiting
+#### 1️⃣ Fixed Window Rate Limiting
 
 **How it works:**  
 - Counts the number of requests per client in **fixed time intervals** (e.g., 5 requests per 60 seconds).  
@@ -42,7 +42,7 @@ To protect the API from abuse and ensure fair usage, this project implements **r
 
 ---
 
-### 2️⃣ Sliding Window Rate Limiting
+#### 2️⃣ Sliding Window Rate Limiting
 
 **How it works:**  
 - Tracks **timestamps of each request** using a Redis sorted set.  
@@ -75,7 +75,7 @@ To protect the API from abuse and ensure fair usage, this project implements **r
 
 ---
 
-### ✅ Summary Table
+#### ✅ Summary Table
 
 | Feature                  | Fixed Window       | Sliding Window           |
 |--------------------------|-----------------|-------------------------|
@@ -84,3 +84,44 @@ To protect the API from abuse and ensure fair usage, this project implements **r
 | Memory usage             | Very low         | Higher (timestamps stored) |
 | Accuracy                 | Approximate      | Exact                   |
 | Best for                 | Low-traffic, simple | Production, high-traffic |
+
+
+## Background Tasks (FastAPI)
+
+FastAPI BackgroundTasks are used to execute **lightweight, non-critical work after the HTTP response has been sent to the client**.
+
+This allows the user to receive a response immediately, while additional work is performed in the background.
+
+### Typical use cases
+- Logging
+- Audit trails
+- Metrics / analytics
+- Fire-and-forget notifications (e.g. Slack, webhooks)
+
+### How it works
+- A `BackgroundTasks` instance is **created per request**
+- Tasks are **registered**, not executed immediately
+- The HTTP response is sent to the client
+- After the response is sent, the registered tasks are executed
+
+### Important characteristics
+- Background tasks run **in the same worker process**
+- They run **on the same machine**
+- Tasks are executed **sequentially**
+- There is **no retry mechanism**
+- Tasks are **lost if the process crashes**
+- Long-running tasks will **block the worker**
+
+### When to use BackgroundTasks
+- The task is short and lightweight
+- The task is not business-critical
+- It is acceptable to lose the task on failure
+- No retries or persistence are required
+
+### When NOT to use BackgroundTasks
+- Sending important emails (e.g. password reset)
+- Payments or billing
+- Long-running or CPU-intensive jobs
+- Tasks that must be retried or guaranteed
+
+For critical or long-running work, a task queue such as **Celery** should be used instead.
