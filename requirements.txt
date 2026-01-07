@@ -10,3 +10,7 @@ python-jose
 python-multipart
 httpx
 pydantic-settings
+redis
+celery
+aioredis
+redis[asyncio]
