@@ -35,6 +35,33 @@ services:
       - "8081:8081"
     depends_on:
       - redis
+  
+  celery_worker:
+    container_name: celery_worker
+    build: .
+    command: celery -A app.celery_worker:celery worker --loglevel=info
+    volumes:
+      - ./app:/app/app
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+    depends_on:
+      - fastapi
+      - redis
+  
+  flower:
+    container_name: flower
+    build: .
+    command: celery -A app.celery_worker:celery flower --port=5555
+    ports:
+      - "5556:5555"
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+    depends_on:
+      - fastapi
+      - celery_worker
+      - redis
 
 volumes:
   postgres_data:

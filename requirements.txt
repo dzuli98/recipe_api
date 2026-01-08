@@ -15,3 +15,4 @@ celery
 aioredis
 redis[asyncio]
 psycopg2-binary
+flower
