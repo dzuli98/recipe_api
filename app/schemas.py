@@ -90,3 +90,8 @@ class NutritionItem(BaseModel):
 class NutritionResponse(BaseModel):
     recipe_id: int
     nutrition: List[NutritionItem]
+
+class EmailRequest(BaseModel):
+    recipient: str = Field(...)
+    subject: str = Field(...)
+    body: str = Field(...)
