@@ -80,3 +80,24 @@ async def sliding_window_rate_limiter(request: Request):
         # Fail open if Redis is down
         print("Rate limiter Redis unavailable:", e)
         return
+
+def rate_limit_user(key:str , limit: int, window: int) -> bool:
+    """
+    Synchronous rate limiter for non-async contexts.
+    - key: Unique identifier (e.g., user ID)
+    - limit: Max requests allowed
+    - window: Time window in seconds
+    """
+    try:
+        current_count = redis_client.client.incr(key)
+        if current_count == 1:
+            redis_client.client.expire(key, window)
+
+        if current_count > limit:
+            return False  # Rate limit exceeded
+
+        return True  # Within rate limit
+
+    except RedisError as e:
+        print("Rate limiter Redis unavailable:", e)
+        return True  # Fail open
